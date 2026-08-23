@@ -1,0 +1,85 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Discover campus resources · CampusLoop{% endblock %}
+{% block content %}
+<section class="discovery-hero">
+  <div class="shell discovery-grid">
+    <div>
+      <div class="eyebrow"><span class="pulse-dot"></span> {{ stats.active }} active resources near campus</div>
+      <h1>Find what you need.<br><span>Share what you don’t.</span></h1>
+      <p>A trusted student marketplace for buying, selling, renting, borrowing and donating—ranked by useful AI, not noisy ads.</p>
+      <form class="search-bar" method="get" action="{% url 'home' %}">
+        <label class="sr-only" for="q">Search campus resources</label>
+        <span class="search-icon">⌕</span>
+        <input id="q" name="q" value="{{ query }}" placeholder="Try “data structures book under ₹600”">
+        <button type="submit">Smart search <span>→</span></button>
+      </form>
+      <div class="quick-searches"><span>Popular:</span><a href="?q=engineering+books">Engineering books</a><a href="?q=calculator">Calculators</a><a href="?type=rent">Rentals</a></div>
+    </div>
+    <aside class="impact-card">
+      <div class="impact-top"><span>Campus impact</span><strong>Live demo</strong></div>
+      <div class="impact-number">₹{{ stats.saved|floatformat:0 }}</div>
+      <p>kept within the student community</p>
+      <div class="impact-bars"><i style="height:35%"></i><i style="height:48%"></i><i style="height:42%"></i><i style="height:68%"></i><i style="height:76%"></i><i style="height:92%"></i></div>
+      <div class="impact-stats"><div><strong>{{ stats.students }}</strong><span>student sellers</span></div><div><strong>{{ stats.exchanges }}</strong><span>safe exchanges</span></div></div>
+    </aside>
+  </div>
+</section>
+
+<section class="shell marketplace-section">
+  <div class="category-strip" aria-label="Browse by category">
+    <a href="{% url 'home' %}" class="category-chip {% if not selected_category %}active{% endif %}"><span>✦</span>All</a>
+    {% for value,label in categories %}
+      <a href="?category={{ value }}{% if selected_transaction %}&type={{ selected_transaction }}{% endif %}" class="category-chip {% if selected_category == value %}active{% endif %}"><span>{% if value == 'books' %}▤{% elif value == 'electronics' %}⌁{% elif value == 'lab' %}⚗{% elif value == 'hostel' %}⌂{% elif value == 'sports' %}◉{% else %}◇{% endif %}</span>{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  {% if recommendations %}
+  <section class="recommendation-panel">
+    <div class="section-heading">
+      <div><span class="ai-kicker">✦ AI picks</span><h2>Recommended for you</h2><p>Based on your course, interests, freshness and affordability.</p></div>
+      <a href="{% url 'ai_lab' %}">Why these? →</a>
+    </div>
+    <div class="recommendation-row">
+      {% for listing,score in recommendations %}
+        <a class="mini-recommendation" href="{% url 'listing_detail' listing.id %}">
+          {% if listing.display_image %}<img src="{{ listing.display_image }}" alt="" loading="lazy">{% else %}<span class="mini-image">{{ listing.get_category_display|slice:":1" }}</span>{% endif %}
+          <span class="mini-copy"><strong>{{ listing.title }}</strong><small>{{ listing.get_condition_display }} · {{ score|floatformat:2 }} match</small></span>
+          <b>{% if listing.price %}₹{{ listing.price|floatformat:0 }}{% else %}Free{% endif %}</b>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="results-toolbar">
+    <div><h2>{% if query %}Results for “{{ query }}”{% else %}Fresh around campus{% endif %}</h2><p>{{ listings|length }} useful item{{ listings|length|pluralize }} found</p></div>
+    <form method="get" class="filter-controls">
+      {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+      {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+      <select name="type" aria-label="Transaction type" onchange="this.form.submit()">
+        <option value="">All exchange types</option>
+        {% for value,label in transaction_types %}<option value="{{ value }}" {% if selected_transaction == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <select name="sort" aria-label="Sort listings" onchange="this.form.submit()">
+        <option value="recommended" {% if selected_sort == 'recommended' %}selected{% endif %}>Newest</option>
+        <option value="popular" {% if selected_sort == 'popular' %}selected{% endif %}>Most popular</option>
+        <option value="price_low" {% if selected_sort == 'price_low' %}selected{% endif %}>Price: low to high</option>
+      </select>
+    </form>
+  </div>
+
+  {% if listings %}
+    <div class="listing-grid">{% for listing in listings %}{% include 'marketplace/_listing_card.html' %}{% endfor %}</div>
+  {% else %}
+    <div class="empty-state"><span>⌕</span><h3>No exact matches yet</h3><p>Try fewer words or browse a nearby category.</p><a class="button button-primary" href="{% url 'home' %}">View all resources</a></div>
+  {% endif %}
+</section>
+
+<section class="trust-banner">
+  <div class="shell trust-grid">
+    <div><span>01</span><h3>Verified students</h3><p>Campus email and account trust signals reduce anonymous misuse.</p></div>
+    <div><span>02</span><h3>Explainable AI checks</h3><p>Every listing receives price, text, fraud and image-quality analysis.</p></div>
+    <div><span>03</span><h3>Safer campus exchange</h3><p>Chat, demo payments and moderation remain inside one auditable workflow.</p></div>
+  </div>
+</section>
+{% endblock %}

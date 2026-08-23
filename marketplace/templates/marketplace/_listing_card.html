@@ -1,0 +1,27 @@
+<article class="listing-card">
+  <a class="listing-image-wrap" href="{% url 'listing_detail' listing.id %}">
+    {% if listing.display_image %}
+      <img src="{{ listing.display_image }}" alt="{{ listing.title }}" loading="lazy">
+    {% else %}
+      <div class="image-fallback"><span>{{ listing.get_category_display|slice:":1" }}</span><small>{{ listing.get_category_display }}</small></div>
+    {% endif %}
+    <span class="transaction-pill pill-{{ listing.transaction_type }}">{{ listing.get_transaction_type_display }}</span>
+    {% if listing.image_quality_score >= 80 %}<span class="quality-pill">AI verified photo</span>{% endif %}
+  </a>
+  <div class="listing-card-body">
+    <div class="listing-meta"><span>{{ listing.get_category_display }}</span><span>•</span><span>{{ listing.get_condition_display }}</span></div>
+    <a class="listing-title" href="{% url 'listing_detail' listing.id %}">{{ listing.title }}</a>
+    <div class="listing-price-row">
+      {% if listing.transaction_type == 'donate' %}<strong>Free</strong>
+      {% elif listing.transaction_type == 'borrow' %}<strong>Borrow</strong>
+      {% else %}<strong>₹{{ listing.price|floatformat:0 }}</strong>{% if listing.transaction_type == 'rent' %}<small>/ period</small>{% endif %}
+      {% endif %}
+    </div>
+    <div class="seller-row">
+      <span class="mini-avatar">{{ listing.seller.first_name|default:listing.seller.username|slice:":1"|upper }}</span>
+      <span>{{ listing.seller.first_name|default:listing.seller.username }}</span>
+      {% if listing.seller.profile.email_verified %}<span class="verified" title="Verified campus email">✓</span>{% endif %}
+      <span class="seller-location">{{ listing.location }}</span>
+    </div>
+  </div>
+</article>

@@ -1,0 +1,84 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI-powered campus resource sharing and marketplace">
+  <title>{% block title %}CampusLoop{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'marketplace/styles.css' %}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell nav-shell">
+      <a class="brand" href="{% url 'home' %}" aria-label="CampusLoop home">
+        <span class="brand-mark">C</span>
+        <span>Campus<span class="accent-text">Loop</span></span>
+      </a>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">Discover</a>
+        <a href="{% url 'ai_lab' %}" class="{% if request.resolver_match.url_name == 'ai_lab' %}active{% endif %}">AI Lab</a>
+        <a href="{% url 'ai_assistant' %}" class="{% if request.resolver_match.url_name == 'ai_assistant' %}active{% endif %}">AI Assistant</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'message_center' %}" class="nav-with-badge">Messages {% if unread_messages %}<span>{{ unread_messages }}</span>{% endif %}</a>
+          <a href="{% url 'payment_history' %}" class="{% if request.resolver_match.url_name == 'payment_history' %}active{% endif %}">Payments</a>
+          <a href="{% url 'dashboard' %}" class="nav-with-badge">Dashboard {% if unread_notifications %}<span>{{ unread_notifications }}</span>{% endif %}</a>
+        {% endif %}
+      </nav>
+      <div class="nav-actions">
+        {% if user.is_authenticated %}
+          <a class="button button-primary button-small" href="{% url 'listing_create' %}">+ List an item</a>
+          <details class="account-menu">
+            <summary aria-label="Open account menu">{{ user.first_name|default:user.username|slice:":1"|upper }}</summary>
+            <div class="account-popover">
+              <strong>{{ user.get_full_name|default:user.username }}</strong>
+              <small>{{ user.email }}</small>
+              <a href="{% url 'dashboard' %}">My dashboard</a>
+              <a href="{% url 'payment_history' %}">Payment history</a>
+              <a href="{% url 'ai_assistant' %}">AI Assistant</a>
+              {% if user.is_staff %}<a href="{% url 'moderation_panel' %}">Moderation</a>{% endif %}
+              <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
+            </div>
+          </details>
+        {% else %}
+          <a class="text-link" href="{% url 'login' %}">Log in</a>
+          <a class="button button-primary button-small" href="{% url 'register' %}">Join campus</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if messages %}
+    <div class="shell toast-stack" aria-live="polite">
+      {% for message in messages %}<div class="toast toast-{{ message.tags }}">{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
+  <main>{% block content %}{% endblock %}</main>
+
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <a href="{% url 'home' %}"><span>⌂</span>Discover</a>
+    <a href="{% url 'ai_assistant' %}"><span>✦</span>Assistant</a>
+    {% if user.is_authenticated %}
+      <a class="mobile-create" href="{% url 'listing_create' %}"><span>＋</span>Sell</a>
+      <a href="{% url 'payment_history' %}"><span>₹</span>Payments</a>
+      <a href="{% url 'dashboard' %}"><span>◇</span>You</a>
+    {% else %}
+      <a class="mobile-create" href="{% url 'register' %}"><span>＋</span>Join</a>
+      <a href="{% url 'login' %}"><span>◇</span>Log in</a>
+    {% endif %}
+  </nav>
+
+  <footer class="site-footer">
+    <div class="shell footer-row">
+      <div><strong>CampusLoop</strong><p>Share smarter. Spend less. Build campus community.</p></div>
+      <div class="footer-links"><a href="{% url 'ai_lab' %}">How the AI works</a><a href="{% url 'ai_assistant' %}">Ask AI Assistant</a><a href="{% url 'home' %}?type=donate">Donations</a><a href="{% url 'home' %}?type=borrow">Borrowing</a></div>
+    </div>
+  </footer>
+  <script src="{% static 'marketplace/app.js' %}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}AI Assistant · CampusLoop{% endblock %}
+{% block content %}
+<section class="assistant-page">
+  <div class="shell assistant-layout">
+    <aside class="assistant-intro">
+      <span class="eyebrow"><span class="pulse-dot"></span> Python AI chatbot</span>
+      <h1>Ask CampusLoop.</h1>
+      <p>The assistant uses TF-IDF and cosine similarity to retrieve marketplace guidance or relevant live listings.</p>
+      <div class="assistant-capabilities">
+        <div><strong>Find resources</strong><span>“Show Python books under ₹600”</span></div>
+        <div><strong>Understand payments</strong><span>“How can I pay with UPI?”</span></div>
+        <div><strong>Exchange safely</strong><span>“How do I avoid fraud?”</span></div>
+      </div>
+    </aside>
+
+    <section class="assistant-card" id="assistant-chat" data-endpoint="{% url 'ai_assistant' %}">
+      <header><span class="assistant-avatar">✦</span><div><strong>Campus AI Assistant</strong><small>Retrieval model online</small></div><i></i></header>
+      <div class="assistant-messages" data-chat-messages aria-live="polite">
+        <article class="assistant-message bot"><span>✦</span><div><p>Hello! Ask me to find an item, explain the payment option, or help with marketplace safety.</p><small>AI assistant</small></div></article>
+        {% for item in assistant_history %}<article class="assistant-message {% if item.role == 'user' %}user{% else %}bot{% endif %}"><span>{% if item.role == 'user' %}You{% else %}✦{% endif %}</span><div><p>{{ item.text }}</p><small>{{ item.role }}</small></div></article>{% endfor %}
+      </div>
+      <div class="assistant-prompts">
+        <button type="button" data-assistant-prompt="Find a calculator under ₹800">Calculator under ₹800</button>
+        <button type="button" data-assistant-prompt="How does the payment option work?">Payment help</button>
+        <button type="button" data-assistant-prompt="How do I avoid fraud?">Safety help</button>
+      </div>
+      <form class="assistant-form" data-assistant-form method="post">
+        {% csrf_token %}
+        <label class="sr-only" for="assistant-message">Message</label>
+        <input id="assistant-message" name="message" maxlength="300" placeholder="Ask about items, prices, payments, or safety…" autocomplete="off" required>
+        <button type="submit" aria-label="Send question">Send →</button>
+      </form>
+      <p class="assistant-disclaimer">Academic AI assistant. Verify important exchange details with the seller.</p>
+    </section>
+  </div>
+</section>
+{% endblock %}

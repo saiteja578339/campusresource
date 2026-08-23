@@ -1,0 +1,41 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}{{ listing.title }} · CampusLoop{% endblock %}
+{% block content %}
+<section class="shell detail-page">
+  <div class="breadcrumb"><a href="{% url 'home' %}">Discover</a><span>›</span><a href="{% url 'home' %}?category={{ listing.category }}">{{ listing.get_category_display }}</a><span>›</span><span>{{ listing.title }}</span></div>
+  <div class="detail-layout">
+    <div class="detail-gallery">
+      {% if listing.display_image %}<img src="{{ listing.display_image }}" alt="{{ listing.title }}">{% else %}<div class="large-fallback">{{ listing.get_category_display|slice:":1" }}</div>{% endif %}
+      <div class="image-analysis-strip"><span class="ai-orb small">✦</span><div><strong>{% if listing.cnn_labels %}MobileNetV2 recognized {{ listing.cnn_labels|join:', ' }}{% else %}Photo quality analysis{% endif %}</strong><small>Quality score {{ listing.image_quality_score }}/100 · CNN-assisted safety signal</small></div></div>
+    </div>
+    <div class="detail-info">
+      <div class="listing-meta"><span>{{ listing.get_category_display }}</span><span>•</span><span>{{ listing.get_condition_display }}</span><span>•</span><span>{{ listing.views }} views</span></div>
+      <h1>{{ listing.title }}</h1>
+      <div class="detail-price">{% if listing.transaction_type == 'donate' %}Free{% elif listing.transaction_type == 'borrow' %}Borrow{% else %}₹{{ listing.price|floatformat:0 }}{% endif %}<span>{{ listing.get_transaction_type_display }}</span></div>
+      {% if listing.predicted_price %}<div class="fair-price"><span>✦ AI fair-price estimate</span><strong>₹{{ listing.predicted_price|floatformat:0 }}</strong><small>{% if listing.price <= listing.predicted_price %}Fair campus value{% else %}Above predicted value{% endif %}</small></div>{% endif %}
+      <div class="seller-profile"><span class="profile-avatar">{{ listing.seller.first_name|default:listing.seller.username|slice:":1"|upper }}</span><div><strong>{{ listing.seller.get_full_name|default:listing.seller.username }} {% if listing.seller.profile.email_verified %}<i class="verified">✓</i>{% endif %}</strong><span>{{ listing.seller.profile.course|default:'Campus student' }} · Trust {{ listing.seller.profile.trust_score }}/100</span></div><small>{{ listing.location }}</small></div>
+      <div class="detail-description"><h2>About this resource</h2><p>{{ listing.description|linebreaksbr }}</p>{% if listing.course_tags %}<div class="tag-row">{% for tag in listing.course_tags.split %}<span>{{ tag }}</span>{% endfor %}</div>{% endif %}</div>
+      <div class="safety-card"><div><span>✓</span><strong>AI safety check</strong></div><p>Fraud risk {{ listing.fraud_score }}/100 · Text moderation {{ listing.get_moderation_status_display|lower }} · Image quality {{ listing.image_quality_score }}/100</p></div>
+
+      {% if user.is_authenticated and user != listing.seller and listing.status == 'active' %}
+      <div class="action-grid">
+        <form method="post" action="{% url 'toggle_favorite' listing.id %}">{% csrf_token %}<button class="button button-secondary button-wide" type="submit">{% if is_favorite %}♥ Saved{% else %}♡ Save item{% endif %}</button></form>
+        <button class="button button-primary button-wide" type="button" data-dialog-open="payment-dialog">Pay / Reserve →</button>
+      </div>
+      <details class="message-box"><summary>Message {{ listing.seller.first_name|default:listing.seller.username }}</summary><form method="post" action="{% url 'send_message' listing.id %}">{% csrf_token %}{{ message_form.body }}<button class="button button-primary button-small" type="submit">Send message</button></form></details>
+      {% elif not user.is_authenticated %}<a class="button button-primary button-wide" href="{% url 'login' %}?next={{ request.path }}">Log in to contact seller</a>{% elif user == listing.seller %}<div class="owner-note">This is your listing. Manage it from your <a href="{% url 'dashboard' %}">dashboard</a>.</div>{% endif %}
+    </div>
+  </div>
+
+  <section class="reviews-section">
+    <div class="section-heading"><div><span class="ai-kicker">Student trust</span><h2>Reviews</h2><p>{{ review_summary.average|default:0|floatformat:1 }} average from {{ review_summary.count|default:0 }} review{{ review_summary.count|default:0|pluralize }}</p></div></div>
+    <div class="review-layout"><div class="review-list">{% for review in reviews %}<article><div><strong>{{ review.author.first_name|default:review.author.username }}</strong><span>{{ review.rating }}/5 · {{ review.sentiment }}</span></div><p>{{ review.body }}</p></article>{% empty %}<div class="empty-inline">No reviews yet. Be the first after a completed exchange.</div>{% endfor %}</div>{% if user.is_authenticated and user != listing.seller %}<form class="surface compact-form" method="post" action="{% url 'add_review' listing.id %}">{% csrf_token %}<h3>Add your review</h3>{{ review_form.as_p }}<button class="button button-secondary" type="submit">Save review</button></form>{% endif %}</div>
+  </section>
+
+  {% if related %}<section class="related-section"><div class="results-toolbar"><div><h2>Similar resources</h2><p>Ranked by category and your interests</p></div></div><div class="listing-grid">{% for item in related %}{% with listing=item %}{% include 'marketplace/_listing_card.html' %}{% endwith %}{% endfor %}</div></section>{% endif %}
+</section>
+
+{% if user.is_authenticated and user != listing.seller %}
+<dialog id="payment-dialog" class="payment-dialog"><form method="post" action="{% url 'demo_checkout' listing.id %}">{% csrf_token %}<button type="button" class="dialog-close" data-dialog-close>×</button><span class="ai-kicker">Payment option</span><h2>Pay and reserve {{ listing.title }}</h2><div class="payment-summary"><span>Amount</span><strong>₹{{ listing.price|floatformat:0 }}</strong></div><label>Payment method<select name="method"><option value="upi">UPI</option><option value="card">Card</option><option value="wallet">Wallet</option><option value="netbanking">Net banking</option></select></label><div class="demo-warning">Academic simulation: the transaction is stored in SQLite, but no real money is charged.</div><button class="button button-primary button-wide" type="submit">Pay ₹{{ listing.price|floatformat:0 }} and reserve</button></form></dialog>
+{% endif %}
+{% endblock %}

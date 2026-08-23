@@ -1,0 +1,23 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Log in · CampusLoop{% endblock %}
+{% block content %}
+<section class="auth-shell shell">
+  <div class="auth-story">
+    <span class="ai-kicker">Student-only community</span>
+    <h1>Welcome back to your campus loop.</h1>
+    <p>Continue discovering affordable resources and completing safe student-to-student exchanges.</p>
+    <div class="auth-proof"><div><strong>5 AI checks</strong><span>on listings and conversations</span></div><div><strong>One campus</strong><span>focused, useful recommendations</span></div></div>
+  </div>
+  <div class="auth-card">
+    <h2>Log in</h2><p>Use your registered username and password.</p>
+    <form method="post" class="stack-form">{% csrf_token %}
+      {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+      <label>Username{{ form.username }}</label>
+      <label>Password{{ form.password }}</label>
+      <button class="button button-primary button-wide" type="submit">Continue to marketplace</button>
+    </form>
+    <p class="auth-switch">New here? <a href="{% url 'register' %}">Create a campus account</a></p>
+    <div class="demo-note"><strong>Demo account</strong><code>saiteja</code> / <code>Campus@123</code></div>
+  </div>
+</section>
+{% endblock %}

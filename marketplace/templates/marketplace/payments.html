@@ -1,0 +1,16 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}Payments · CampusLoop{% endblock %}
+{% block content %}
+<section class="shell payment-page">
+  <header class="payment-page-header">
+    <div><span class="eyebrow"><span class="security-dot"></span> Academic payment gateway</span><h1>Payments and reservations</h1><p>Choose UPI, card, wallet, or net banking from an active listing. Transactions are simulated and stored for demonstration.</p></div>
+    <a class="button button-primary" href="{% url 'home' %}">Find an item to pay for</a>
+  </header>
+  <div class="payment-metrics"><div><span>Total paid</span><strong>₹{{ total_paid|floatformat:0 }}</strong><small>Captured demo transactions</small></div><div><span>Total received</span><strong>₹{{ total_received|floatformat:0 }}</strong><small>Payments on your listings</small></div><div><span>Payment methods</span><strong>4</strong><small>UPI · card · wallet · net banking</small></div></div>
+  <div class="payment-columns">
+    <section class="surface payment-history-panel"><div class="panel-heading"><div><h2>Your payments</h2><p>Items you reserved</p></div></div><div class="payment-table">{% for payment in payments %}<article><div><strong>{{ payment.listing.title }}</strong><span>{{ payment.created_at|date:'d M Y, H:i' }}</span></div><div><b>₹{{ payment.amount|floatformat:0 }}</b><span>{{ payment.get_method_display }}</span></div><div><code>{{ payment.transaction_ref }}</code><span class="status status-approved">{{ payment.get_status_display }}</span></div></article>{% empty %}<div class="empty-state"><span>₹</span><h3>No payments yet</h3><p>Open an active listing and select Pay / Reserve.</p><a class="button button-primary" href="{% url 'home' %}">Discover resources</a></div>{% endfor %}</div></section>
+    <section class="surface payment-history-panel"><div class="panel-heading"><div><h2>Payments received</h2><p>Reservations on your listings</p></div></div><div class="payment-table">{% for payment in received_payments %}<article><div><strong>{{ payment.listing.title }}</strong><span>Buyer: {{ payment.buyer.first_name|default:payment.buyer.username }}</span></div><div><b>₹{{ payment.amount|floatformat:0 }}</b><span>{{ payment.get_method_display }}</span></div><div><code>{{ payment.transaction_ref }}</code><span class="status status-approved">{{ payment.get_status_display }}</span></div></article>{% empty %}<div class="empty-inline">No payments have been recorded for your listings.</div>{% endfor %}</div></section>
+  </div>
+  <div class="demo-warning payment-page-warning"><strong>Demo-only payment:</strong> the project creates a transaction record and reserves the listing; it does not connect to a bank or charge real money.</div>
+</section>
+{% endblock %}

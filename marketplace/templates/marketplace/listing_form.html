@@ -1,0 +1,67 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}List an item · CampusLoop{% endblock %}
+{% block content %}
+<section class="shell form-page">
+  <header class="page-heading"><span class="eyebrow"><span class="pulse-dot"></span> AI-assisted listing studio</span><h1>Create a trustworthy listing</h1><p>Describe your resource once. Python AI checks the price, text, image and fraud risk before publishing.</p></header>
+  <div class="listing-form-layout">
+    <form method="post" enctype="multipart/form-data" class="surface main-form" id="listing-form">{% csrf_token %}
+      {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="form-section"><div class="form-section-number">1</div><div class="form-section-copy"><h2>What are you sharing?</h2><p>Start with the basic type and condition.</p></div></div>
+      <div class="form-grid">
+        <label>Category{{ form.category }}{% for error in form.category.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</label>
+        <label>Condition{{ form.condition }}{% for error in form.condition.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</label>
+        <label>Exchange type{{ form.transaction_type }}{% for error in form.transaction_type.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</label>
+        <label>Expected demand (0–100){{ form.demand_score }}{% for error in form.demand_score.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</label>
+      </div>
+      <button class="button button-soft ai-draft-button" type="button" id="generate-draft">✦ Generate title and description</button>
+
+      <div class="form-section section-spaced"><div class="form-section-number">2</div><div class="form-section-copy"><h2>Tell students the useful details</h2><p>Clear information improves search and trust.</p></div></div>
+      <div class="stack-form">
+        <label>Title{{ form.title }}{% for error in form.title.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</label>
+        <label>Description{{ form.description }}{% for error in form.description.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</label>
+        <div class="form-grid"><label>Price (₹){{ form.price }}{% for error in form.price.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</label><label>Campus pickup location{{ form.location }}{% for error in form.location.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</label></div>
+        <label>Course tags{{ form.course_tags }}{% for error in form.course_tags.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</label>
+      </div>
+
+      <div class="form-section section-spaced"><div class="form-section-number">3</div><div class="form-section-copy"><h2>Add a clear product photo</h2><p>MobileNetV2 recognizes uploaded items and checks photo quality.</p></div></div>
+      <div class="upload-grid"><label class="upload-box">{{ form.image }}<span class="upload-icon">⇧</span><strong>Upload image</strong><small>JPG or PNG, up to 8 MB</small></label><label>Or provide an image URL{{ form.image_url }}</label></div>
+
+      <div class="publish-row"><div><span class="security-dot"></span><strong>Safety checks run automatically</strong><small>Text moderation · Fraud risk · Price range · Image quality</small></div><button class="button button-primary" type="submit">Analyze & publish →</button></div>
+    </form>
+
+    <aside class="ai-side-panel">
+      <div class="ai-panel-head"><span class="ai-orb">✦</span><div><strong>Python AI copilot</strong><small>Ready to assist</small></div></div>
+      <div class="ai-result" id="draft-status"><p>Choose a category, condition and exchange type. Then ask the AI to draft a consistent listing.</p></div>
+      <div class="price-box"><span>Suggested fair price</span><strong id="predicted-price">—</strong><small id="price-method">Enter listing details to estimate</small></div>
+      <div class="model-checklist"><div><i>✓</i><span><strong>Random Forest</strong>Fair-price regression</span></div><div><i>✓</i><span><strong>TF-IDF NLP</strong>Searchable descriptions</span></div><div><i>✓</i><span><strong>Isolation Forest</strong>Anomaly detection</span></div><div><i>✓</i><span><strong>MobileNetV2</strong>CNN image recognition</span></div></div>
+    </aside>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const value = name => document.querySelector(`[name=${name}]`)?.value || '';
+  const button = document.getElementById('generate-draft');
+  const status = document.getElementById('draft-status');
+  const refreshPrice = async () => {
+    const response = await fetch('{% url "api_predict_price" %}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':csrf}, body:JSON.stringify({category:value('category'),condition:value('condition'),transaction_type:value('transaction_type'),demand_score:Number(value('demand_score')||50),quality_score:72})});
+    const data = await response.json();
+    document.getElementById('predicted-price').textContent = data.price ? `₹${Math.round(data.price)}` : 'Free';
+    document.getElementById('price-method').textContent = `${Math.round(data.confidence*100)}% confidence · ${data.method}`;
+  };
+  ['category','condition','transaction_type','demand_score'].forEach(name => document.querySelector(`[name=${name}]`)?.addEventListener('change', refreshPrice));
+  button.addEventListener('click', async () => {
+    button.disabled = true; status.innerHTML = '<p>Generating a consistent campus listing…</p>';
+    const response = await fetch('{% url "api_generate_draft" %}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':csrf}, body:JSON.stringify({category:value('category'),condition:value('condition'),transaction_type:value('transaction_type'),location:value('location'),keywords:value('course_tags')})});
+    const data = await response.json();
+    document.querySelector('[name=title]').value = data.title;
+    document.querySelector('[name=description]').value = data.description;
+    status.innerHTML = `<span class="success-label">Draft ready</span><strong>${data.title}</strong><p>${data.tags.join(' · ')}</p>`;
+    button.disabled = false; refreshPrice();
+  });
+  refreshPrice();
+});
+</script>
+{% endblock %}
